@@ -46,7 +46,8 @@ echo " Run started at:- "
 date
 
 ./distributed_train.sh 4 /nobackup/projects/public/imagenet21k_resized/ \
--b 2048 --model resnet50 --num-classes 0 --epochs 300 --opt lamb --sched cosine --lr 0.005 --native-amp \
+--train-split imagenet21k_train --val-split imagenet21k_val \
+-b 2048 --model resnet50 --num-classes 0 --epochs 300 --opt lamb --sched cosine --lr 0.005 --amp \
 --weight-decay 0.02 --warmup-epochs 5 --eval-metric loss \
 --hflip 0.5 --aa rand-m7-mstd0.5 --mixup 0.1 --cutmix 1.0 --drop-path 0.05 \
 --aug-splits 4 --dist-bn reduce 
