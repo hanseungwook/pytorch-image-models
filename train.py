@@ -188,6 +188,10 @@ parser.add_argument('--aug-splits', type=int, default=0,
                     help='Number of augmentation splits (default: 0, valid: 0 or >=2)')
 parser.add_argument('--jsd-loss', action='store_true', default=False,
                     help='Enable Jensen-Shannon Divergence + CE loss. Use with `--aug-splits`.')
+parser.add_argument('--supcon-loss', action='store_true', default=False,
+                    help='Enable Supervised Contrastive InfoNCE loss')
+parser.add_argument('--temp', type=float, default=0.1,
+                    help='Temperature hyperparameter for cosine similarity (in InfoNCE loss)')              
 parser.add_argument('--bce-loss', action='store_true', default=False,
                     help='Enable BCE loss w/ Mixup/CutMix use.')
 parser.add_argument('--bce-target-thresh', type=float, default=None,
@@ -562,6 +566,8 @@ def main():
     if args.jsd_loss:
         assert num_aug_splits > 1  # JSD only valid with aug splits set
         train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing)
+    elif args.supcon_loss:
+        train_loss_fn = SupConLoss(temperature=args.temp)
     elif mixup_active:
         # smoothing is handled with mixup target transform which outputs sparse, soft targets
         if args.bce_loss:
@@ -678,7 +684,10 @@ def train_one_epoch(
 
         with amp_autocast():
             output = model(input)
-            loss = loss_fn(output, target)
+            if args.supcon_loss:
+                loss = loss_fn(output, labels=target)
+            else:
+                loss = loss_fn(output, target)
 
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
