@@ -793,7 +793,10 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
                 target = target[0:target.size(0):reduce_factor]
 
             loss = loss_fn(output, target)
-            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            if not args.supcon_loss:
+                acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            else:
+                acc1, acc5 = 0., 0.
 
             if args.distributed:
                 reduced_loss = reduce_tensor(loss.data, args.world_size)
