@@ -2,7 +2,7 @@ from .registry import is_model, is_model_in_modules, model_entrypoint
 from .helpers import load_checkpoint
 from .layers import set_layer_config
 from .hub import load_model_config_from_hf
-from contrastive import ContrastiveNet
+from .contrastive import ContrastiveNet
 
 
 def split_model_name(model_name):
