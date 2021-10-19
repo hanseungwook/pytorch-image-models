@@ -50,7 +50,7 @@ date
 -b 2048 --model resnet50 --num-classes 0 --epochs 300 --opt lamb --sched cosine --lr 0.005 --amp \
 --weight-decay 0.02 --warmup-epochs 5 --eval-metric loss \
 --hflip 0.5 --aa rand-m7-mstd0.5 --mixup 0.1 --cutmix 1.0 --drop-path 0.05 \
---aug-splits 4 --dist-bn reduce 
+--aug-splits 4 --dist-bn reduce --supcon-loss
 
 echo "Run completed at:- "
 date
