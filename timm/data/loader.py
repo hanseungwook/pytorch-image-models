@@ -176,6 +176,7 @@ def create_loader(
         use_multi_epochs_loader=False,
         persistent_workers=True,
         worker_seeding='all',
+        contrastive=False,
 ):
     re_num_splits = 0
     if re_split:
@@ -202,6 +203,7 @@ def create_loader(
         re_count=re_count,
         re_num_splits=re_num_splits,
         separate=num_aug_splits > 0,
+        contrastive=contrastive
     )
 
     sampler = None

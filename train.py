@@ -377,7 +377,8 @@ def main():
         bn_momentum=args.bn_momentum,
         bn_eps=args.bn_eps,
         scriptable=args.torchscript,
-        checkpoint_path=args.initial_checkpoint)
+        checkpoint_path=args.initial_checkpoint,
+        contrastive=args.supcon_loss)
     if args.num_classes is None:
         assert hasattr(model, 'num_classes'), 'Model must have `num_classes` attr if not set on cmd line/config.'
         args.num_classes = model.num_classes  # FIXME handle model default vs config num_classes more elegantly
@@ -545,6 +546,7 @@ def main():
         pin_memory=args.pin_mem,
         use_multi_epochs_loader=args.use_multi_epochs_loader,
         worker_seeding=args.worker_seeding,
+        contrastive=args.supcon_loss
     )
 
     loader_eval = create_loader(
@@ -560,6 +562,7 @@ def main():
         distributed=args.distributed,
         crop_pct=data_config['crop_pct'],
         pin_memory=args.pin_mem,
+        contrastive=args.supcon_loss
     )
 
     # setup loss function
@@ -675,6 +678,8 @@ def train_one_epoch(
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
+        if args.supcon_loss:
+            input = torch.cat([input[0], input[1]], dim=0)
         if not args.prefetcher:
             input, target = input.cuda(), target.cuda()
             if mixup_fn is not None:

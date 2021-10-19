@@ -2,6 +2,7 @@ from .registry import is_model, is_model_in_modules, model_entrypoint
 from .helpers import load_checkpoint
 from .layers import set_layer_config
 from .hub import load_model_config_from_hf
+from contrastive import ContrastiveNet
 
 
 def split_model_name(model_name):
@@ -29,6 +30,7 @@ def create_model(
         scriptable=None,
         exportable=None,
         no_jit=None,
+        contrastive=False,
         **kwargs):
     """Create a model
 
@@ -79,6 +81,10 @@ def create_model(
 
     with set_layer_config(scriptable=scriptable, exportable=exportable, no_jit=no_jit):
         model = create_fn(pretrained=pretrained, **kwargs)
+
+    # Create contrastive model
+    if contrastive:
+        model = ContrastiveNet(encoder=model, name=model_name)
 
     if checkpoint_path:
         load_checkpoint(model, checkpoint_path)
