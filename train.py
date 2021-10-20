@@ -566,11 +566,14 @@ def main():
     )
 
     # setup loss function
+    validate_loss_fn = nn.CrossEntropyLoss()
+
     if args.jsd_loss:
         assert num_aug_splits > 1  # JSD only valid with aug splits set
         train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing)
     elif args.supcon_loss:
         train_loss_fn = SupConLoss(temperature=args.temp)
+        validate_loss_fn = SupConLoss(temperature=args.temp)
     elif mixup_active:
         # smoothing is handled with mixup target transform which outputs sparse, soft targets
         if args.bce_loss:
@@ -584,8 +587,10 @@ def main():
             train_loss_fn = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
     else:
         train_loss_fn = nn.CrossEntropyLoss()
+
     train_loss_fn = train_loss_fn.cuda()
-    validate_loss_fn = nn.CrossEntropyLoss().cuda()
+    validate_loss_fn = validate_loss_fn.cuda()
+    
 
     # setup checkpoint saver and eval metric tracking
     eval_metric = args.eval_metric
@@ -782,6 +787,8 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
     with torch.no_grad():
         for batch_idx, (input, target) in enumerate(loader):
             last_batch = batch_idx == last_idx
+            if args.supcon_loss:
+                input = torch.cat([input[0], input[1]], dim=0)
             if not args.prefetcher:
                 input = input.cuda()
                 target = target.cuda()
@@ -789,7 +796,12 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
                 input = input.contiguous(memory_format=torch.channels_last)
 
             with amp_autocast():
-                output = model(input)
+                if args.supcon_loss:
+                    f1, f2 = torch.split(output, [len(input)//2, len(input)//2], dim=0)
+                    output = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
+                else:
+                    output = model(input)
+                
             if isinstance(output, (tuple, list)):
                 output = output[0]
 
@@ -799,11 +811,12 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
                 output = output.unfold(0, reduce_factor, reduce_factor).mean(dim=2)
                 target = target[0:target.size(0):reduce_factor]
 
-            loss = loss_fn(output, target)
-            if not args.supcon_loss:
-                acc1, acc5 = accuracy(output, target, topk=(1, 5))
-            else:
+            if args.supcon_loss:
+                loss = loss_fn(output, labels=target)
                 acc1, acc5 = 0., 0.
+            else:
+                loss = loss_fn(output, target)
+                acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
             if args.distributed:
                 reduced_loss = reduce_tensor(loss.data, args.world_size)
