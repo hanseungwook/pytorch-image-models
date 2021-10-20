@@ -690,6 +690,8 @@ def train_one_epoch(
         with amp_autocast():
             output = model(input)
             if args.supcon_loss:
+                f1, f2 = torch.split(output, [len(input)//2, len(input)//2], dim=0)
+                output = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
                 loss = loss_fn(output, labels=target)
             else:
                 loss = loss_fn(output, target)
