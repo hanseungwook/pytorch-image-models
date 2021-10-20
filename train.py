@@ -794,6 +794,7 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
 
             with amp_autocast():
                 if args.supcon_loss:
+                    output = model(input)
                     f1, f2 = torch.split(output, [len(input)//2, len(input)//2], dim=0)
                     output = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
                 else:
