@@ -818,8 +818,9 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
 
             if args.distributed:
                 reduced_loss = reduce_tensor(loss.data, args.world_size)
-                acc1 = reduce_tensor(acc1, args.world_size)
-                acc5 = reduce_tensor(acc5, args.world_size)
+                if not args.supcon_loss:
+                    acc1 = reduce_tensor(acc1, args.world_size)
+                    acc5 = reduce_tensor(acc5, args.world_size)
             else:
                 reduced_loss = loss.data
 
