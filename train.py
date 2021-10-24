@@ -831,8 +831,8 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
 
             losses_m.update(reduced_loss.item(), input.size(0))
             if args.supcon_loss:
-                top1_m.update(acc1.item(), output.size(0))
-                top5_m.update(acc5.item(), output.size(0))
+                top1_m.update(acc1, output.size(0))
+                top5_m.update(acc5, output.size(0))
             else: 
                 top1_m.update(acc1.item(), output.size(0))
                 top5_m.update(acc5.item(), output.size(0))
